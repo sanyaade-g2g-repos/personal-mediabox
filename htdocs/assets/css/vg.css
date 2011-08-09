@@ -56,5 +56,6 @@ code {
 } 
 
 #results .video-result {
-	
+	float: none;
+	clear: both;
 } 

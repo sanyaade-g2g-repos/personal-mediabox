@@ -20,9 +20,6 @@ var search = function() {
 	});
 }
 var refreshLibraryList = function(options) {
-	options = options || {
-		order: 'abc'
-	};
 	$.ajax({
 		url: "/index.php/library/listlibrary"
 		,type: 'post'
@@ -32,6 +29,10 @@ var refreshLibraryList = function(options) {
 			$(this).html(data);
 		}
 	});
+}
+var applySorting = function(sender) {
+	var options = $.parseJSON( sender.val() );
+	refreshLibraryList(options);
 }
 $(function(){
 	$('#list').load('/index.php/library/listlibrary');

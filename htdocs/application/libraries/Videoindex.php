@@ -146,10 +146,7 @@ class Videoindex {
 		// update the index item
 		if (count($results) > 0) {
 			// get the plot from imdb
-			//echo "imdbInfo['ID'] = "; var_dump($imdbInfo['ID']);
 			$imdb_href = $this->ci->imdbapi->makeUrl($imdbInfo['ID']);
-			//echo "imdb_href = "; var_dump($imdb_href);
-			//$results[0]->Description = $imdbInfo['Plot'].' <a href="'.$imdb_href.'">'.$item['Title'].' on imdb.com</a>';
 			$results[0]->Description = $imdbInfo['Plot'];
 			// get the poster from imdb
 			$poster_info = pathinfo($imdbInfo['Poster']);
@@ -161,6 +158,20 @@ class Videoindex {
 			$results[0]->ImdbHref = $imdb_href;
 			$results[0]->ImdbId = $imdbInfo['ID'];
 			$results[0]->Year = $imdbInfo['Year'];
+			// update genre tags
+			$tags = explode(', ', $imdbInfo['Genre']);
+			unset($results[0]->Tags);
+			$tags_node = $results[0]->addChild('Tags');
+			foreach ($tags as $tag) {
+				$tags_node->addChild('Tag', $tag);
+			}
+			// update artists
+			$artists = explode(', ', $imdbInfo['Actors']);
+			unset($results[0]->Artists);
+			$artists_node = $results[0]->addChild('Artists');
+			foreach ($artists as $artist) {
+				$artists_node->addChild('Artist', $artist);
+			}
 		}
 	}
 	
@@ -174,10 +185,11 @@ class Videoindex {
 			$this->load();
 		}
 		// Dateipfad erzeugen
-		$filepath = 'D:\xampp\myprojects\mediabox\htdocs\videos\\'.$filename;
+		$filepath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->ci->config->item('video_path_r');
+		//$filepath = 'D:\xampp\myprojects\mediabox\htdocs\videos\\'.$filename;
 		$title = basename($filepath, '.m4v');
 		$filename = basename($filepath);
-		// Neues Item in Index einfï¿½gen
+		// Neues Item in Index einfügen
 		$newItem = $this->index_xml->addChild('Item');
 		$newItem->addChild('Title', $title);
 		$newItem->addChild('FilePath', $filepath);
@@ -187,14 +199,21 @@ class Videoindex {
 		$newItem->addChild('Width', $media_info['Video']['Width']);
 		$newItem->addChild('Height', $media_info['Video']['Height']);
 		$newItem->addChild('Description', empty($imdb_info) ? '' : $imdb_info['Plot']);
+		$newItem->addChild('ImdbId', empty($imdb_info) ? '' : $imdb_info['ID']);
+		$newItem->addChild('ImdbHref', $this->ci->imdbapi->makeUrl($imdb_info['ID']));
+		$newItem->addChild('Year', empty($imdb_info) ? '' : $imdb_info['Year']);
+		// update genre tags
 		$tags = explode(', ', $imdb_info['Genre']);
 		$tags_node = $newItem->addChild('Tags');
 		foreach ($tags as $tag) {
 			$tags_node->addChild('Tag', $tag);
 		}
-		$newItem->addChild('ImdbId', empty($imdb_info) ? '' : $imdb_info['ID']);
-		$newItem->addChild('ImdbHref', $this->ci->imdbapi->makeUrl($imdb_info['ID']));
-		$newItem->addChild('Year', empty($imdb_info) ? '' : $imdb_info['Year']);
+		// update artists
+		$artists = explode(', ', $imdb_info['Actors']);
+		$artists_node = $newItem->addChild('Artists');
+		foreach ($artists as $artist) {
+			$artists_node->addChild('Artist', $artist);
+		}
 	}
 	
 	public function update() {
@@ -243,6 +262,37 @@ class Videoindex {
 		}
 		else {
 			$this->index_xml->attributes()->version = $targetVersion->getVersion();
+		}
+	}
+	
+	public function updateItem($item, $newValues) {
+		// try to load the index if needed
+		if (!$this->is_loaded()) {
+			$this->load();
+		}
+		$results = $this->index_xml->xpath($item['_xpath_']);
+		if (count($results) == 1) {
+			$results[0]->Title = isset($newValues['Title']) ? $newValues['Title'] : $item->Title;
+			$results[0]->ImdbId = isset($newValues['ImdbId']) ? $newValues['ImdbId'] : $item->ImdbId;
+			$results[0]->Year = isset($newValues['Year']) ? $newValues['Year'] : $item->Year;
+			$results[0]->Description = isset($newValues['Description']) ? $newValues['Description'] : $item->Description;
+			// TODO: update tags
+			unset($results[0]->Tags);
+			$tags_node = $results[0]->addChild('Tags');
+			foreach ($newValues['Tags'] as $tag) {
+				$tags_node->addChild('Tag', $tag);
+			}
+			// TODO: update artists
+			unset($results[0]->Artists);
+			$artists_node = $results[0]->addChild('Artists');
+			foreach ($newValues['Artists'] as $artist) {
+				$artists_node->addChild('Artist', $artist);
+			}
+			$results[0]->FilePath = isset($newValues['FilePath']) ? $newValues['FilePath'] : $item->FilePath;
+			$results[0]->FileUrl = isset($newValues['FileUrl']) ? $newValues['FileUrl'] : $item->FileUrl;
+			$results[0]->WatchUrl = isset($newValues['WatchUrl']) ? $newValues['WatchUrl'] : $item->WatchUrl;
+			$results[0]->Width = isset($newValues['Width']) ? intval($newValues['Width']) : $item->Width;
+			$results[0]->Height = isset($newValues['Height']) ? intval($newValues['Height']) : $item->Height; 
 		}
 	}
 	

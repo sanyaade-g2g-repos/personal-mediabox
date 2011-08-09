@@ -116,16 +116,22 @@ var removeMediaItem = function() {
 		}
 	});
 }
-var removeTag = function(tagName) {
+var editMediaItem = function() {
+	$('#edit-messages').html('<div>Loading...</div>').fadeIn().delay(1000).fadeOut("slow");
 	$.ajax({
-		url: '/index.php/video/removeTag'
+		url: '/index.php/video/edit'
 		,data: {
-			id: '<?php echo $Title; ?>'
-			,tag: tagName
+			'v': '<?php echo $Title; ?>'
 		}
 		,type: 'post'
 		,success: function(data, textStatus, jqXHR) {
-			$('#video-info .tags').html(data);
+			$('#edit-messages').html(
+					'<div>Loading Successful</div>'
+			).fadeIn().delay(1000).fadeOut("slow").empty();
+			$('.video-info').html(data);
+		}
+		,error: function(data, textStatus, jqXHR) {
+			$('#edit-messages').html(data).fadeIn("slow").delay(2000).fadeOut("slow").empty();
 		}
 	});
 }
@@ -133,6 +139,15 @@ var removeTag = function(tagName) {
 </head>
 <body>
 <div style="position:absolute; margin-left:300px;">
+	<a href="javascript:editMediaItem();" title="Metadaten von <?php echo $Title; ?> bearbeiten">Bearbeiten</a>
+	<div id="edit-messages" style="display:none; position:absolute; z-index:1000; background: white;">
+	</div>
+	|
+	<a href="javascript:removeMediaItem();" title="<?php echo $Title; ?> aus der Bibliothek entfernen">Entfernen</a>
+	<div id="remove-results" style="display:none; position:absolute; z-index:1000; background:white;">
+		Das Element wurde gelöscht. <a href="/index.php" title="">Klicken Sie hier</a> um zurück zur Startseite zu gelangen</a>
+	</div>
+	|
 	<a href="javascript:updateFromImdb();" title="Informationen auf imdb.com suchen">IMDb Update</a>
 	<div id="imdb-update-results" style="position:absolute; margin-top:20px; z-index:1000;"> </div>
 	|
@@ -142,15 +157,11 @@ var removeTag = function(tagName) {
 		<div class="results"></div>
 	</div>
 	|
-	<a href="javascript:removeMediaItem();" title="<?php echo $Title; ?> aus der Bibliothek entfernen">Entfernen</a>
-	<div id="remove-results" style="display:none; position:absolute; z-index:1000; background:white;">
-		Das Element wurde gelöscht. <a href="/index.php" title="">Klicken Sie hier</a> um zurück zur Startseite zu gelangen</a>
-	</div>
-	|
-	<a href="/index.php" title="Zur&uuml;ck zur Startseite">Zur&uuml;ck</a>
+	<a href="/index.php" title="Zurück zur Startseite">Zur&uuml;ck</a>
 </div>
 <h1><?php echo $Title;?></h1>
 <div class="video-box">
+	File Url: <a href="<?php echo $FileUrl;?>"><?php echo $FileUrl;?></a>
 	<video id="vid<?php echo $Index;?>" width="480" height="267" durationHint="33" poster="<?php echo $PreviewImgUrl;?>">
 		<source	src="<?php echo $FileUrl;?>"/>
 	</video>
@@ -158,15 +169,22 @@ var removeTag = function(tagName) {
 <div class="video-info">
 	<p><?php echo $Description; ?></p>
 	<?php echo isset($Year) ? '<p>Released in: '.$Year.'</p>' : ''; ?>
-	<h3>Tags</h3>
-	<p>Klicke auf einen Tag um diesen zu entfernen.</p>
-	<ul class="tags">
 	<? if (count($Tags) > 0) { ?>
+	<h3>Tags</h3>
+	<ul class="tags">
 	<? foreach ($Tags as $Tag) { ?>
-		<li><a href="javascript:removeTag('<? echo $Tag; ?>');"><? echo $Tag; ?></a></li>
+		<li><? echo $Tag; ?></li>
 	<? } /*endforeach*/ ?>
-	<? } /*endif */ ?>
 	</ul>
+	<? } /*endif */ ?>
+	<? if (count($Artists) > 0) { ?>
+	<h3>Schauspieler</h3>
+	<ul>
+	<? foreach ($Artists as $Artist) { ?>
+		<li><? echo $Artist; ?></li>
+	<? } /*endforeach*/ ?>
+	</ul>
+	<? } /*endif */ ?>
 	<h3>Links</h3>
 	<? if (!isset($ImdbHref)) { ?>
 	<form action="" method="post" name="setImdbId">

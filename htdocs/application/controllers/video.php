@@ -28,7 +28,7 @@ class Video extends CI_Controller {
 	
 	public function edit() {
 		
-		$v = $this->input->get('v');
+		$v = $this->input->post('v');
 		
 		$this->load->library('Videoindex');
 		$video = $this->videoindex->getByTitle($v);
@@ -37,7 +37,13 @@ class Video extends CI_Controller {
 			return;
 		}
 		
-		$this->load->view('video/editform', $media_info);
+		$this->load->view('video/editform', array_merge(
+			$video
+			,array(
+				'panel_id' => 'video_editform'
+				,'video_id' => $v
+			)
+		));
 	}
 	
 	public function getMediaInfo() {
@@ -140,6 +146,45 @@ class Video extends CI_Controller {
 			'movie_title' => $video_title
 		));
 	}
+	
+	public function update() {
+		
+		$this->load->library('Videoindex');
+		$v = $this->input->post('video_id');
+		$video = $this->videoindex->getByTitle($v);
+		if (!isset($video)) {
+			show_error($v.' does not exist in the database');
+			return;
+		}
+		
+		$title = $this->input->post('title');
+		$imdbid = $this->input->post('imdbid');
+		$year = $this->input->post('year');
+		$description = $this->input->post('description');
+		$tags = explode("\n",$this->input->post('tags'));
+		$artists = explode("\n",$this->input->post('artists'));
+		$filepath = $this->input->post('filepath');
+		$fileurl = $this->input->post('fileurl');
+		$width = $this->input->post('width');
+		$height = $this->input->post('height');
+		
+		$this->videoindex->updateItem($video, array(
+			'Title' => $title
+			,'ImdbId' => $imdbid
+			,'Year' => $year
+			,'Description' => $description
+			,'Tags' => $tags
+			,'Artists' => $artists
+			,'FilePath' => $filepath
+			,'FileUrl' => $fileurl
+			,'WatchUrl' => '/index.php/video/watch?v='.$title
+			,'Width' => $width
+			,'Height' => $height
+		));
+		
+		$this->videoindex->update();
+		
+	}
 
 	/**
 	 * Neue Datei hochladen und in den Index aufnehmen
@@ -203,6 +248,20 @@ class Video extends CI_Controller {
 		$this->videoindex->removeItem($title);
 		// save changes to the index
 		$this->videoindex->update();		
+	}
+	
+	public function info() {
+		
+		$v = $this->input->post('v');
+		
+		$this->load->library('Videoindex');
+		$video = $this->videoindex->getByTitle($v);
+		if (!isset($video)) {
+			show_error($v.' does not exist in the database');
+			return;
+		}
+		
+		$this->load->view('video/videoinfo', $video);
 	}
 	
 }
